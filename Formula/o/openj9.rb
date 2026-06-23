@@ -150,7 +150,7 @@ class Openj9 < Formula
       %W[
         --enable-dtrace
         --with-freetype-include=#{Formula["freetype"].opt_include}
-        --with-freetype-lib=#{Formula["freetype"].opt_lib}
+        --with-freetype-lib=#{formula_opt_lib("freetype")}
         --with-sysroot=#{MacOS.sdk_path}
       ]
     else
@@ -159,8 +159,8 @@ class Openj9 < Formula
 
       %W[
         --with-x=#{HOMEBREW_PREFIX}
-        --with-cups=#{Formula["cups"].opt_prefix}
-        --with-fontconfig=#{Formula["fontconfig"].opt_prefix}
+        --with-cups=#{formula_opt_prefix("cups")}
+        --with-fontconfig=#{formula_opt_prefix("fontconfig")}
         --with-stdc++lib=dynamic
       ]
     end
