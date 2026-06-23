@@ -242,7 +242,7 @@ class Emscripten < Formula
     inreplace libexec/".emscripten" do |s|
       s.change_make_var! "LLVM_ROOT", "'#{libexec}/llvm/bin'"
       s.change_make_var! "BINARYEN_ROOT", "'#{libexec}/binaryen'"
-      s.change_make_var! "NODE_JS", "'#{Formula["node"].opt_bin}/node'"
+      s.change_make_var! "NODE_JS", "'#{formula_opt_bin("node")}/node'"
     end
   end
 
