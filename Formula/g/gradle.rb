@@ -1,8 +1,8 @@
 class Gradle < Formula
   desc "Open-source build automation tool based on the Groovy and Kotlin DSL"
   homepage "https://www.gradle.org/"
-  url "https://services.gradle.org/distributions/gradle-9.7.1-all.zip"
-  sha256 "92c1a136d76b5017732a66d2e0a648ebff00dd3687d8bff0d0047a1bd904fdf2"
+  url "https://services.gradle.org/distributions/gradle-9.8.0-all.zip"
+  sha256 "46ac66d47f30f3dacfdf306e0b714a91a34fb94a22ba0a744b280933f47bc0cf"
   license "Apache-2.0"
 
   livecheck do
@@ -11,12 +11,13 @@ class Gradle < Formula
   end
 
   bottle do
-    sha256 cellar: :any_skip_relocation, all: "fb3b1da09f092f6433b62479bc0c243e5dad11f2f229ff94a1e23289b7b34fb6"
+    sha256 cellar: :any_skip_relocation, all: "d8c9f23c4c851451fbd164d79933f1366208b90afa2d5ebbd657b9a99abd7e5b"
   end
 
   depends_on "gradle-completion"
-  # https://github.com/gradle/gradle/blob/master/platforms/documentation/docs/src/docs/userguide/releases/compatibility.adoc
   # depends_on "openjdk"
+
+  allow_network_access! :test
 
   def install
     rm(Dir["bin/*.bat"])
