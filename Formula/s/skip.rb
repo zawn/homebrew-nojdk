@@ -1,17 +1,18 @@
 class Skip < Formula
   desc "Tool for building Swift apps for Android"
   homepage "https://skip.dev"
-  url "https://github.com/skiptools/skipstone/archive/refs/tags/1.9.10.tar.gz"
-  sha256 "440d4a9ac7ce2184001206d0121baebd79987412b59a084561c57158af0ce4c3"
+  url "https://github.com/skiptools/skipstone/archive/refs/tags/1.9.11.tar.gz"
+  sha256 "da5280142a7537ad4424e6b420128d01edc24a0be6e654b60f8f44f56ffb4a85"
   license "AGPL-3.0-only"
   head "https://github.com/skiptools/skipstone.git", branch: "main"
 
   bottle do
-    sha256 arm64_golden_gate: "d8f999761a5120d19429e6d2426c45b6b42f0f64149011223fc4f6842f381663"
-    sha256 arm64_tahoe:       "bea0d222b8ff7b614bcfca2def9433d4f6f94c287bfb34462d792e51f0d888a6"
-    sha256 arm64_sequoia:     "0838f1023da66605625fb103922881c2a35dacd1d059c5386078b523b9e23e2e"
-    sha256 arm64_linux:       "263ee17350b212de66e9a929253d1099b51793e5a6c55fccb4def1139bd93876"
-    sha256 x86_64_linux:      "e189015d682d19a2366150518c8306d4ad832e2d979996f2148acd730a19f12b"
+    rebuild 1
+    sha256 arm64_golden_gate: "aa75eaa2de8c356ffd63aa1d1201295e56200f8186a7f3ca32e7c2019b56745f"
+    sha256 arm64_tahoe:       "8d8461bd18684d07ab42382fd6179b51beb2aae63e6e453c03b08a3d16c8c744"
+    sha256 arm64_sequoia:     "2f09995b647ebfcd9eca162abd041951a4d36aee82e3a6ccccdb3c75cbfb3306"
+    sha256 arm64_linux:       "364eff7c5182923fa44d1a12b40bfc349d0f579db053f2cc082a8fae0da42771"
+    sha256 x86_64_linux:      "1cf0f543d1285c02b1664be8580b1ed3864fdeacfe85bf7aa72f19e2dab4d78d"
   end
 
   depends_on "gradle"
@@ -32,8 +33,8 @@ class Skip < Formula
   end
 
   resource "skipsubmodule" do
-    url "https://github.com/skiptools/skip/archive/refs/tags/1.9.10.tar.gz"
-    sha256 "2f9b0b50038ed5f088e6caca005639bcd35f5a76e78255241d79541ca030dcb2"
+    url "https://github.com/skiptools/skip/archive/refs/tags/1.9.11.tar.gz"
+    sha256 "ac55fb432f02460df5acba18f3ad814be9d2cb970b38ad0917ff7ad010acd8c7"
 
     livecheck do
       formula :parent
@@ -43,7 +44,13 @@ class Skip < Formula
   def install
     resource("skipsubmodule").stage buildpath/"skip"
 
-    system "swift", "build", "--product", "SkipRunner", *std_swift_args
+    # FIXME: need to update brew as Swift 6.4.0+ doesn't use ld shim anymore
+    if OS.linux?
+      args = ENV["HOMEBREW_LIBRARY_PATHS"].to_s.split(":").flat_map { ["-Xlinker", "-L#{it}"] } +
+             ENV["HOMEBREW_RPATH_PATHS"].to_s.split(":").flat_map { ["-Xlinker", "-rpath", "-Xlinker", it] }
+    end
+
+    system "swift", "build", "--product", "SkipRunner", *args, *std_swift_args
     bin.install ".build/release/SkipRunner" => "skip"
     generate_completions_from_executable(bin/"skip", "--generate-completion-script")
   end
