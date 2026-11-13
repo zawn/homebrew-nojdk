@@ -1,10 +1,10 @@
 class Beast < Formula
   desc "Bayesian Evolutionary Analysis Sampling Trees"
   homepage "https://beast.community/"
-  url "https://github.com/beast-dev/beast-mcmc/archive/refs/tags/v10.5.0.tar.gz"
-  sha256 "6287ebbe85e65e44f421b7e9ec3fd17d9a736ff909dfa3b4ab6b1b1fd361b52b"
+  url "https://github.com/beast-dev/beast-mcmc/archive/refs/tags/v10.6.0.tar.gz"
+  sha256 "1b012f15d90438a532950e5156ba495f763157478edd46853b763ac53a0831af"
   license "LGPL-2.1-or-later"
-  head "https://github.com/beast-dev/beast-mcmc.git", branch: "master"
+  head "https://github.com/beast-dev/beast-mcmc.git", branch: "main"
 
   livecheck do
     url :stable
@@ -12,23 +12,23 @@ class Beast < Formula
   end
 
   bottle do
-    sha256 cellar: :any_skip_relocation, arm64_tahoe:   "f6bea503ebf5a08dec482d702efc5deb9a582e508b02c0801676e5b12d81cc38"
-    sha256 cellar: :any_skip_relocation, arm64_sequoia: "3b8a6e27f0f6d7d2ea5975527fcaeb26e12e85084ada04504faf8648e49c68aa"
-    sha256 cellar: :any_skip_relocation, arm64_sonoma:  "14251bfb6655c4a41182c877f335e7a52d94b0cf19944b6a84503114ffe9d225"
-    sha256 cellar: :any_skip_relocation, arm64_ventura: "0d3c7f2ada5fe41129297cb1d3982c820795caf49df73ef195809a105b6fc7b1"
-    sha256 cellar: :any_skip_relocation, sonoma:        "26662c5e73e42985a75df7fb1fa10f74eff789aa3271daf497323c8c66725dee"
-    sha256 cellar: :any_skip_relocation, ventura:       "293196654c48f797b253a1d07ce9bab5836d5682fbe1772f26a6dc8f64875977"
-    sha256 cellar: :any_skip_relocation, arm64_linux:   "68647073986327f94f8ee9ec7e8d4b0e34cb8555378591e99e0ab19f480d9e83"
-    sha256 cellar: :any_skip_relocation, x86_64_linux:  "34a93fd16e042a40f5d18973a31931ea504884cacb750acaabb1772a891435d3"
+    sha256 cellar: :any_skip_relocation, arm64_golden_gate: "b01984684bec8c75f9f340b3316742ce2749c1134c5bfd44e32fae12888d1b48"
+    sha256 cellar: :any_skip_relocation, arm64_tahoe:       "852287f0b7c92e35e11319fab8d0d52d298bb27fcb4a6c562e5b6c85611a014b"
+    sha256 cellar: :any_skip_relocation, arm64_sequoia:     "63cfce71d6837a9a31d27471b8b8c9be64be2aebd355f9ebefebe989aa41d445"
+    sha256 cellar: :any_skip_relocation, arm64_linux:       "73371051eaf4191dd96937212f4e4ab907ee5c9b44c1b635fff8e7d39c06eeba"
+    sha256 cellar: :any_skip_relocation, x86_64_linux:      "45ef71fa01bca5bceeae0208a58fbd97163f437efb7e3c1206e9666d3d11a272"
   end
 
   depends_on "ant" => :build
   depends_on "beagle"
   # depends_on "openjdk"
 
+  deny_network_access!
+
   def install
     ENV["JAVA_HOME"] = Language::Java.java_home
-    system "ant", "linux"
+    system "ant"
+    system "ant", "package-linux", "-f", "build_release.xml"
     libexec.install Dir["release/Linux/BEAST_X_v*/*"]
     pkgshare.install_symlink libexec/"examples"
     bin.install Dir[libexec/"bin/*"]
@@ -46,18 +46,16 @@ class Beast < Formula
     inreplace "testUCRelaxedClockLogNormal.xml", 'chainLength="10000000"',
                                                  'chainLength="100000"'
 
-    # OpenCL is not supported on virtualized arm64 macOS and causes all beast commands to fail
-    if OS.mac? && Hardware::CPU.arm? && Hardware::CPU.virtualized?
-      output = shell_output("#{bin}/beast testUCRelaxedClockLogNormal.xml 2>&1", 255)
-      assert_match "OpenCL error: CL_INVALID_VALUE", output
-      return
-    end
-
     system bin/"beast", "testUCRelaxedClockLogNormal.xml"
 
-    %w[ops log trees].each do |ext|
-      output = "testUCRelaxedClockLogNormal." + ext
-      assert_path_exists testpath/output, "Failed to create #{output}"
+    samples = (testpath/"testUCRelaxedClockLogNormal.log").read.lines.reject { |line| line.start_with?("#") }
+    columns = samples.shift.split
+    result = columns.zip(samples.last.split).to_h
+    assert_equal "100000", result.fetch("state")
+    %w[posterior prior likelihood].each do |statistic|
+      assert Float(result.fetch(statistic)).finite?, "Non-finite #{statistic}"
     end
+    assert_in_delta Float(result.fetch("prior")) + Float(result.fetch("likelihood")),
+                    Float(result.fetch("posterior")), 1e-5
   end
 end
